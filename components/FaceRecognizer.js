@@ -1,23 +1,33 @@
 "use client";
 
-import React, { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import * as faceapi from "face-api.js";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
+import useLabels from "@/components/useLabels"; // MongoDB hook
 
-export default function FaceRecognizer({ labels }) {
+export default function FaceRecognizer() {
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
+  const { labels: fetchedLabels, loading: labelsLoading, error } = useLabels();
+
   const [message, setMessage] = useState("Loading models...");
   const [finished, setFinished] = useState(false);
-  const [detectedPerson, setDetectedPerson] = useState(null); // <-- add this
+  const [detectedPerson, setDetectedPerson] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [confidence, setConfidence] = useState(0);
 
-  const MODEL_URL = "/models"; // models folder in public
+  const MODEL_URL = "/models";
 
+  // Use labels directly from MongoDB with full image URL
+  const labels = fetchedLabels;
+
+  // Retry function
   const handleRetry = () => {
     setFinished(false);
     setMessage("Retrying detection...");
-    setDetectedPerson(null); // clear previous detected person
+    setDetectedPerson(null);
+    setConfidence(0);
     if (canvasRef.current) {
       const ctx = canvasRef.current.getContext("2d");
       ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
@@ -27,6 +37,7 @@ export default function FaceRecognizer({ labels }) {
 
   useEffect(() => {
     let stream;
+
     const loadModels = async () => {
       await Promise.all([
         faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL),
@@ -44,6 +55,7 @@ export default function FaceRecognizer({ labels }) {
           videoRef.current.srcObject = stream;
           videoRef.current.onloadedmetadata = () => {
             videoRef.current.play();
+            setIsLoading(false);
             runDetection();
           };
         }
@@ -51,16 +63,18 @@ export default function FaceRecognizer({ labels }) {
         console.error("Webcam error:", err);
         setMessage("Cannot access webcam ❌");
         setFinished(true);
+        setIsLoading(false);
       }
     };
 
-    loadModels();
+    if (!labelsLoading && !error && labels.length > 0) loadModels();
 
     return () => {
       if (stream) stream.getTracks().forEach((track) => track.stop());
       if (videoRef.current) videoRef.current.srcObject = null;
     };
-  }, []);
+    // Only run when labels have loaded
+  }, [labelsLoading, error]);
 
   const runDetection = async () => {
     if (
@@ -74,28 +88,21 @@ export default function FaceRecognizer({ labels }) {
     const labeledFaceDescriptors = (
       await Promise.all(
         labels.map(async (student) => {
-          const descriptors = [];
-          for (let i = 0; i < 1; i++) {
-            try {
-              const img = await faceapi.fetchImage(
-                `/labels/${student.name}/${student.images[i]}`
-              );
-              const detection = await faceapi
-                .detectSingleFace(img, new faceapi.TinyFaceDetectorOptions())
-                .withFaceLandmarks()
-                .withFaceDescriptor();
-              if (detection) descriptors.push(detection.descriptor);
-            } catch {
-              console.warn(
-                `Image not found: ${student.name}/${student.images[i]}`
-              );
+          try {
+            const img = await faceapi.fetchImage(student.image); // full URL from MongoDB
+            const detection = await faceapi
+              .detectSingleFace(img, new faceapi.TinyFaceDetectorOptions())
+              .withFaceLandmarks()
+              .withFaceDescriptor();
+
+            if (detection) {
+              return new faceapi.LabeledFaceDescriptors(student.name, [
+                detection.descriptor,
+              ]);
             }
+          } catch {
+            console.warn(`Image not found: ${student.name}`);
           }
-          if (descriptors.length > 0)
-            return new faceapi.LabeledFaceDescriptors(
-              student.name,
-              descriptors
-            );
           return null;
         })
       )
@@ -132,14 +139,28 @@ export default function FaceRecognizer({ labels }) {
       const face = resizedDetections[0];
       const bestMatch = faceMatcher.findBestMatch(face.descriptor);
       const label = bestMatch.label === "unknown" ? "Unknown" : bestMatch.label;
+      const confidenceScore = Math.round((1 - bestMatch.distance) * 100);
 
-      new faceapi.draw.DrawBox(face.detection.box, {
-        label: `${label} (${Math.round((1 - bestMatch.distance) * 100)}%)`,
-      }).draw(canvas);
+      const box = face.detection.box;
+      ctx.strokeStyle = label !== "Unknown" ? "#10b981" : "#ef4444";
+      ctx.lineWidth = 3;
+      ctx.strokeRect(box.x, box.y, box.width, box.height);
+
+      ctx.fillStyle = label !== "Unknown" ? "#10b981" : "#ef4444";
+      ctx.fillRect(box.x, box.y - 30, box.width, 30);
+
+      ctx.fillStyle = "white";
+      ctx.font = "16px Inter, sans-serif";
+      ctx.textAlign = "center";
+      ctx.fillText(
+        `${label} (${confidenceScore}%)`,
+        box.x + box.width / 2,
+        box.y - 8
+      );
 
       setMessage(`Detected: ${label}`);
+      setConfidence(confidenceScore);
 
-      // Set the full detected person's details
       if (label !== "Unknown") {
         const person = labels.find((l) => l.name === label);
         setDetectedPerson(person || null);
@@ -147,65 +168,103 @@ export default function FaceRecognizer({ labels }) {
         setDetectedPerson(null);
       }
     } else {
-      setMessage("No face detected ❌");
+      setMessage("No face detected");
       setDetectedPerson(null);
+      setConfidence(0);
     }
 
     setFinished(true);
   };
 
   return (
-    <div className="flex flex-col items-center justify-center mt-10 px-4">
-      <Link href="/register">
-        <Button
-          variant="default"
-          className="mb-3 px-8 sm:px-10 py-3 sm:py-4 text-lg font-semibold shadow-md cursor-pointer"
-        >
-          Go to Register
-        </Button>
-      </Link>
-      <h1 className="text-5xl sm:text-4xl font-bold text-blue-500 mb-8">
-        Face Recognition Attendance
-      </h1>
+    <div className="min-h-screen bg-gradient-to-br from-slate-400 to-slate-900 flex flex-col items-center justify-start py-12 px-4">
+      {/* Header & Register Button */}
+      <div className="text-center mb-12 space-y-4">
+        <h1 className="text-5xl md:text-7xl font-extrabold text-indigo-300">
+          Face Recognition
+        </h1>
+        <p className="text-lg text-gray-400">Smart Attendance System</p>
+        <Link href="/register">
+          <Button className="bg-slate-800/90 backdrop-blur-sm border border-indigo-600 hover:bg-indigo-900 text-indigo-200 font-semibold px-8 py-3 rounded-full shadow-lg hover:shadow-xl transition-all duration-300">
+            Register New Face
+          </Button>
+        </Link>
+      </div>
 
-      <div className="relative w-[90vw] max-w-[720px] max-h-[500px] aspect-video border-2 border-blue-700 rounded-2xl shadow-2xl bg-transparent backdrop-blur-2xl">
+      {/* Video & Canvas */}
+      <div className="relative w-full max-w-4xl aspect-video rounded-3xl overflow-hidden shadow-2xl border-2 border-gray-700">
         <video
           ref={videoRef}
           autoPlay
           muted
-          className="w-full h-full rounded-2xl object-cover"
+          className="w-full h-full object-cover rounded-3xl"
         />
         <canvas
           ref={canvasRef}
-          className="absolute top-0 left-0 w-full h-full rounded-2xl"
+          className="absolute top-0 left-0 w-full h-full pointer-events-none"
         />
+        <div className="absolute inset-0 bg-black/30 pointer-events-none rounded-3xl" />
       </div>
 
-      <div className="mt-6 text-xl sm:text-2xl font-bold text-blue-400 text-center drop-shadow-lg">
-        {message}
+      {/* Status Message & Confidence Bar */}
+      <div className="w-full max-w-xl mt-6">
+        <div className="bg-slate-800/90 backdrop-blur-md rounded-2xl p-4 shadow-md border border-gray-700 text-center">
+          <p className="text-gray-200 font-medium">{message}</p>
+          {confidence > 0 && (
+            <div className="w-full h-2 bg-gray-700 rounded-full mt-2">
+              <div
+                className="h-2 bg-indigo-400 rounded-full transition-all duration-300"
+                style={{ width: `${confidence}%` }}
+              />
+            </div>
+          )}
+        </div>
       </div>
 
+      {/* Detected Person Card */}
       {detectedPerson && (
-        <div className="mt-4 text-lg sm:text-xl text-blue-600 text-center">
-          <p>
-            <strong>Name:</strong> {detectedPerson.name}
-          </p>
-          <p>
-            <strong>Roll No:</strong> {detectedPerson.rollNo}
-          </p>
-          <p>
-            <strong>Email:</strong> {detectedPerson.email}
-          </p>
+        <div className="w-full max-w-md mt-8 bg-slate-800/90 backdrop-blur-md rounded-3xl shadow-2xl border border-gray-700 p-6 space-y-4">
+          <h3 className="text-2xl font-bold text-indigo-300 text-center">
+            Recognition Successful!
+          </h3>
+          <div className="space-y-2">
+            <div className="flex justify-between bg-slate-700 rounded-xl px-4 py-2">
+              <span className="font-medium text-gray-300 uppercase">Name</span>
+              <span className="font-semibold text-gray-100">
+                {detectedPerson.name}
+              </span>
+            </div>
+            {detectedPerson.rollNo && (
+              <div className="flex justify-between bg-slate-700 rounded-xl px-4 py-2">
+                <span className="font-medium text-gray-300 uppercase">
+                  Roll No
+                </span>
+                <span className="font-semibold text-gray-100">
+                  {detectedPerson.rollNo}
+                </span>
+              </div>
+            )}
+            {detectedPerson.email && (
+              <div className="flex justify-between bg-slate-700 rounded-xl px-4 py-2">
+                <span className="font-medium text-gray-300 uppercase">
+                  Email
+                </span>
+                <span className="font-semibold text-gray-100 break-all">
+                  {detectedPerson.email}
+                </span>
+              </div>
+            )}
+          </div>
         </div>
       )}
 
+      {/* Scan Again Button */}
       {finished && (
         <Button
-          variant="default"
-          className="mt-6 px-8 sm:px-10 py-3 sm:py-4 text-lg font-semibold shadow-md"
           onClick={handleRetry}
+          className="mt-8 bg-indigo-400 hover:bg-indigo-500 text-white font-semibold px-10 py-3 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300"
         >
-          Retry
+          Scan Again
         </Button>
       )}
     </div>
