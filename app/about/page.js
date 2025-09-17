@@ -17,8 +17,7 @@ export default function AboutPage() {
   }
   return (
      <>
-        <div className="fixed inset-0 -z-10">
-        <DarkVeil />
+        <div className="fixed inset-0 -z-10 min-h-screen bg-gradient-to-br from-slate-400 to-slate-700">
         </div>
     <div className="min-h-screen absolute z-50 top-0 w-full h-full ">
       <Navbar />

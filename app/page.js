@@ -182,49 +182,108 @@ export default function AboutPage() {
             <Card className="text-center border-border">
               <CardContent className="pt-6">
                 <div className="w-24 h-24 bg-accent/20 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <span className="text-2xl font-bold text-accent">AS</span>
+                  <span className="text-2xl font-bold text-accent">PS</span>
                 </div>
                 <h3 className="text-xl font-semibold text-foreground mb-2">
-                  Alex Smith
+                  Prem Shaw
                 </h3>
-                <p className="text-accent font-medium mb-3">CEO & Founder</p>
-                <p className="text-muted-foreground text-sm">
-                  Former school administrator with 15 years of experience in
-                  educational technology and institutional management systems.
-                </p>
+                <p className="text-accent font-medium mb-3">Team Leader</p>
+                 
+                  <ul className="list-disc list-inside text-muted-foreground text-sm">
+                    <li>Led the project, coordinated tasks, and ensured timely progress.</li>
+                    <li>Implemented authentication and user verification features to ensure secure access.</li>
+                  </ul>
+                
               </CardContent>
             </Card>
 
             <Card className="text-center border-border">
               <CardContent className="pt-6">
                 <div className="w-24 h-24 bg-accent/20 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <span className="text-2xl font-bold text-accent">MJ</span>
+                  <span className="text-2xl font-bold text-accent">PB</span>
                 </div>
                 <h3 className="text-xl font-semibold text-foreground mb-2">
-                  Maria Johnson
+                  Prashant Bhati
                 </h3>
-                <p className="text-accent font-medium mb-3">Head of Product</p>
-                <p className="text-muted-foreground text-sm">
-                  Curriculum specialist and former teacher who understands the
-                  daily challenges of educational administration and student
-                  tracking.
-                </p>
+                <p className="text-accent font-medium mb-3">Web Developer</p>
+                 
+                 <ul className="list-disc list-inside text-muted-foreground text-sm">
+                    <li>Ensured that the application was both user-friendly and technically robust..</li>
+                    <li>Implemented RESTful APIs, database integration, and server-side logic to provide a scalable and secure foundation for the application.</li>
+                  </ul>
+                  
               </CardContent>
             </Card>
 
             <Card className="text-center border-border">
               <CardContent className="pt-6">
                 <div className="w-24 h-24 bg-accent/20 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <span className="text-2xl font-bold text-accent">DL</span>
+                  <span className="text-2xl font-bold text-accent">PP</span>
                 </div>
                 <h3 className="text-xl font-semibold text-foreground mb-2">
-                  David Lee
+                  Pranav Polawar
                 </h3>
-                <p className="text-accent font-medium mb-3">CTO</p>
-                <p className="text-muted-foreground text-sm">
-                  Technology leader specializing in educational software
-                  architecture and scalable institutional management platforms.
-                </p>
+                <p className="text-accent font-medium mb-3">Frontend Developer</p>
+                 
+                 <ul className="list-disc list-inside text-muted-foreground text-sm">
+                    <li>Ensured responsive layouts, and handled client-side validation.</li>
+                    <li>Built UI with React/Bootstrap/Tailwind, implemented routing, managed state, and ensured cross-browser compatibility.</li>
+                  </ul>
+                
+                
+              </CardContent>
+            </Card>
+            <Card className="text-center border-border">
+              <CardContent className="pt-6">
+                <div className="w-24 h-24 bg-accent/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <span className="text-2xl font-bold text-accent">AG</span>
+                </div>
+                <h3 className="text-xl font-semibold text-foreground mb-2">
+                  Abhir Gosh
+                </h3>
+                <p className="text-accent font-medium mb-3">Machine Learning</p>
+                 
+                  <ul className="list-disc list-inside text-muted-foreground text-sm">
+                    <li>Collected references, wrote project documentation, and created presentation slides.</li>
+                     <li>Assisted in problem-solving and decision-making throughout the project.</li>
+                  </ul>
+                 
+              </CardContent>
+            </Card>
+            <Card className="text-center border-border">
+              <CardContent className="pt-6">
+                <div className="w-24 h-24 bg-accent/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <span className="text-2xl font-bold text-accent">AR</span>
+                </div>
+                <h3 className="text-xl font-semibold text-foreground mb-2">
+                  Anuj Ram Shrivastava
+                </h3>
+                <p className="text-accent font-medium mb-3">ML and Backend Developer</p>
+                 
+                 <ul className="list-disc list-inside text-muted-foreground text-sm">
+                    <li>Connected frontend with backend APIs.</li>
+                    <li>Contributed technically by developing the backend architecture and integrating database operations.</li>
+                  </ul>
+                
+              </CardContent>
+            </Card>
+            <Card className="text-center border-border">
+              <CardContent className="pt-6">
+                <div className="w-24 h-24 bg-accent/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <span className="text-2xl font-bold text-accent">
+                    cs
+                  </span>
+                </div>
+                <h3 className="text-xl font-semibold text-foreground mb-2">
+                  Chandana S
+                </h3>
+                <p className="text-accent font-medium mb-3">Testing and Deployment</p>
+                 
+                  <ul className="list-disc list-inside text-muted-foreground text-sm">
+                    <li>Managed deployment of the application to production servers.</li>
+                    <li>Performed testing to identify and fix bugs.</li>
+                  </ul>
+                
               </CardContent>
             </Card>
           </div>
